@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Vending Manager"
+version = "1.0.0"
+id = "artifacts/vending-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18966
+
+[services.development]
+run = "pnpm --filter @workspace/vending-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vending-app", "run", "build" ]
+publicDir = "artifacts/vending-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18966"
+BASE_PATH = "/"

@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Vending machine management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: clients
+  - name: machines
+  - name: products
+  - name: operators
+  - name: stock
+  - name: machine-loads
+  - name: schedules
+  - name: expenses
+  - name: reports
+  - name: logs
+  - name: dashboard
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,848 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current session
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Clients ───────────────────────────────────────────────────────────────
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List all clients
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create a client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /clients/{id}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /clients/{id}/machines:
+    get:
+      operationId: listClientMachines
+      tags: [clients]
+      summary: List machines assigned to a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client machines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientMachine"
+    post:
+      operationId: assignMachineToClient
+      tags: [clients]
+      summary: Assign a machine to a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientMachineInput"
+      responses:
+        "201":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientMachine"
+
+  /clients/{clientId}/machines/{machineId}:
+    delete:
+      operationId: removeClientMachine
+      tags: [clients]
+      summary: Remove a machine assignment from a client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: machineId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  # ── Machines ──────────────────────────────────────────────────────────────
+  /machines:
+    get:
+      operationId: listMachines
+      tags: [machines]
+      summary: List all machine definitions
+      responses:
+        "200":
+          description: List of machines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Machine"
+    post:
+      operationId: createMachine
+      tags: [machines]
+      summary: Create a machine definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Machine"
+
+  /machines/{id}:
+    get:
+      operationId: getMachine
+      tags: [machines]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Machine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Machine"
+    patch:
+      operationId: updateMachine
+      tags: [machines]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Machine"
+    delete:
+      operationId: deleteMachine
+      tags: [machines]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Products ──────────────────────────────────────────────────────────────
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Operators ─────────────────────────────────────────────────────────────
+  /operators:
+    get:
+      operationId: listOperators
+      tags: [operators]
+      summary: List all operators
+      responses:
+        "200":
+          description: List of operators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Operator"
+    post:
+      operationId: createOperator
+      tags: [operators]
+      summary: Create an operator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OperatorInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+
+  /operators/{id}:
+    get:
+      operationId: getOperator
+      tags: [operators]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Operator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+    patch:
+      operationId: updateOperator
+      tags: [operators]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OperatorUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+    delete:
+      operationId: deleteOperator
+      tags: [operators]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Stock ─────────────────────────────────────────────────────────────────
+  /stock:
+    get:
+      operationId: listStock
+      tags: [stock]
+      summary: Get current stock levels per product
+      responses:
+        "200":
+          description: Stock levels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockLevel"
+
+  /stock/movements:
+    get:
+      operationId: listStockMovements
+      tags: [stock]
+      summary: List stock movements
+      parameters:
+        - name: productId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockMovement"
+    post:
+      operationId: createStockMovement
+      tags: [stock]
+      summary: Add or remove stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockMovementInput"
+      responses:
+        "201":
+          description: Movement recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockMovement"
+
+  # ── Machine Loads (Sales) ─────────────────────────────────────────────────
+  /machine-loads:
+    get:
+      operationId: listMachineLoads
+      tags: [machine-loads]
+      summary: List machine load records
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: clientMachineId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: operatorId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Machine load records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MachineLoad"
+    post:
+      operationId: createMachineLoad
+      tags: [machine-loads]
+      summary: Record a machine load (operator refills machine)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineLoadInput"
+      responses:
+        "201":
+          description: Load recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MachineLoad"
+
+  # ── Schedules ─────────────────────────────────────────────────────────────
+  /schedules:
+    get:
+      operationId: listSchedules
+      tags: [schedules]
+      summary: List service schedules
+      responses:
+        "200":
+          description: Schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Schedule"
+    post:
+      operationId: createSchedule
+      tags: [schedules]
+      summary: Create a schedule entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+
+  /schedules/{id}:
+    delete:
+      operationId: deleteSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /schedules/execution:
+    get:
+      operationId: getScheduleExecution
+      tags: [schedules]
+      summary: Get schedule execution status for current week
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Schedule execution status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduleExecution"
+
+  # ── Expenses ──────────────────────────────────────────────────────────────
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Reports ───────────────────────────────────────────────────────────────
+  /reports/sales:
+    get:
+      operationId: getSalesReport
+      tags: [reports]
+      summary: Sales report with filters
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: clientMachineId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: productId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Sales report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesReport"
+
+  # ── Logs ──────────────────────────────────────────────────────────────────
+  /logs:
+    get:
+      operationId: listLogs
+      tags: [logs]
+      summary: List admin change logs
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Change logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChangeLog"
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Dashboard statistics
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/top-products:
+    get:
+      operationId: getDashboardTopProducts
+      tags: [dashboard]
+      summary: Top and bottom selling products
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Top/bottom products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopProductsResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +887,835 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # ── Auth ────────────────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      properties:
+        password:
+          type: string
+      required:
+        - password
+
+    AuthSession:
+      type: object
+      properties:
+        operatorId:
+          type: ["integer", "null"]
+        operatorName:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [admin, moderator, master]
+      required:
+        - role
+
+    # ── Client ──────────────────────────────────────────────────────────────
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        hasContract:
+          type: boolean
+        contractStartDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - hasContract
+        - createdAt
+
+    ClientInput:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        hasContract:
+          type: boolean
+        contractStartDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - hasContract
+
+    ClientUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        hasContract:
+          type: ["boolean", "null"]
+        contractStartDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ── ClientMachine ────────────────────────────────────────────────────────
+    ClientMachine:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        machineId:
+          type: integer
+        machineName:
+          type: string
+        machineType:
+          type: string
+        machineNumber:
+          type: string
+        installedAt:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        qrCode:
+          type: ["string", "null"]
+      required:
+        - id
+        - clientId
+        - clientName
+        - machineId
+        - machineName
+        - machineType
+        - machineNumber
+        - isActive
+
+    ClientMachineInput:
+      type: object
+      properties:
+        machineId:
+          type: integer
+        machineNumber:
+          type: string
+        installedAt:
+          type: ["string", "null"]
+      required:
+        - machineId
+        - machineNumber
+
+    # ── Machine ──────────────────────────────────────────────────────────────
+    Machine:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [coffee, vending]
+        brand:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        containerCount:
+          type: ["integer", "null"]
+        rowCount:
+          type: ["integer", "null"]
+        chuteCount:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - type
+        - createdAt
+
+    MachineInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [coffee, vending]
+        brand:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        containerCount:
+          type: ["integer", "null"]
+        rowCount:
+          type: ["integer", "null"]
+        chuteCount:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - type
+
+    MachineUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        containerCount:
+          type: ["integer", "null"]
+        rowCount:
+          type: ["integer", "null"]
+        chuteCount:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ── Product ──────────────────────────────────────────────────────────────
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [coffee, vending]
+        purchasePrice:
+          type: number
+        salePrice:
+          type: number
+        unit:
+          type: string
+        stockQuantity:
+          type: number
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - type
+        - purchasePrice
+        - salePrice
+        - unit
+        - stockQuantity
+        - createdAt
+
+    ProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [coffee, vending]
+        purchasePrice:
+          type: number
+        salePrice:
+          type: number
+        unit:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - type
+        - purchasePrice
+        - salePrice
+        - unit
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        purchasePrice:
+          type: ["number", "null"]
+        salePrice:
+          type: ["number", "null"]
+        unit:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ── Operator ─────────────────────────────────────────────────────────────
+    Operator:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [operator, moderator, admin]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - type
+        - isActive
+        - createdAt
+
+    OperatorInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [operator, moderator, admin]
+        password:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+      required:
+        - name
+        - type
+        - isActive
+
+    OperatorUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        type:
+          type: ["string", "null"]
+        password:
+          type: ["string", "null"]
+        isActive:
+          type: ["boolean", "null"]
+
+    # ── Stock ─────────────────────────────────────────────────────────────────
+    StockLevel:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        productType:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        purchasePrice:
+          type: number
+        salePrice:
+          type: number
+      required:
+        - productId
+        - productName
+        - productType
+        - unit
+        - quantity
+        - purchasePrice
+        - salePrice
+
+    StockMovement:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        type:
+          type: string
+          enum: [in, out]
+        reason:
+          type: string
+          enum: [purchase, load, official_entry, official_exit, expired, defect, other]
+        quantity:
+          type: number
+        clientMachineId:
+          type: ["integer", "null"]
+        clientMachineName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        operatorId:
+          type: ["integer", "null"]
+        operatorName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - productId
+        - productName
+        - type
+        - reason
+        - quantity
+        - createdAt
+
+    StockMovementInput:
+      type: object
+      properties:
+        productId:
+          type: integer
+        type:
+          type: string
+          enum: [in, out]
+        reason:
+          type: string
+          enum: [purchase, load, official_entry, official_exit, expired, defect, other]
+        quantity:
+          type: number
+        clientMachineId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        operatorId:
+          type: ["integer", "null"]
+      required:
+        - productId
+        - type
+        - reason
+        - quantity
+
+    # ── Machine Load ─────────────────────────────────────────────────────────
+    MachineLoad:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        clientMachineId:
+          type: integer
+        machineNumber:
+          type: string
+        machineName:
+          type: string
+        operatorId:
+          type: ["integer", "null"]
+        operatorName:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MachineLoadItem"
+        totalRevenue:
+          type: number
+        totalCost:
+          type: number
+        totalProfit:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - clientId
+        - clientName
+        - clientMachineId
+        - machineNumber
+        - machineName
+        - items
+        - totalRevenue
+        - totalCost
+        - totalProfit
+        - createdAt
+
+    MachineLoadItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: number
+        purchasePrice:
+          type: number
+        salePrice:
+          type: number
+      required:
+        - productId
+        - productName
+        - quantity
+        - purchasePrice
+        - salePrice
+
+    MachineLoadInput:
+      type: object
+      properties:
+        clientMachineId:
+          type: integer
+        operatorId:
+          type: ["integer", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MachineLoadItemInput"
+      required:
+        - clientMachineId
+        - items
+
+    MachineLoadItemInput:
+      type: object
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: number
+      required:
+        - productId
+        - quantity
+
+    # ── Schedule ─────────────────────────────────────────────────────────────
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        dayOfWeek:
+          type: integer
+          description: "0=Sunday, 1=Monday, ... 6=Saturday"
+        createdAt:
+          type: string
+      required:
+        - id
+        - clientId
+        - clientName
+        - dayOfWeek
+        - createdAt
+
+    ScheduleInput:
+      type: object
+      properties:
+        clientId:
+          type: integer
+        dayOfWeek:
+          type: integer
+      required:
+        - clientId
+        - dayOfWeek
+
+    ScheduleExecution:
+      type: object
+      properties:
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        dayOfWeek:
+          type: integer
+        scheduledDate:
+          type: string
+        executed:
+          type: boolean
+        loadCount:
+          type: integer
+      required:
+        - clientId
+        - clientName
+        - dayOfWeek
+        - scheduledDate
+        - executed
+        - loadCount
+
+    # ── Expenses ─────────────────────────────────────────────────────────────
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: ["integer", "null"]
+        clientName:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [electricity, rent, repairs, salary, other]
+        amount:
+          type: number
+        description:
+          type: ["string", "null"]
+        isRecurring:
+          type: boolean
+        date:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - category
+        - amount
+        - isRecurring
+        - date
+        - createdAt
+
+    ExpenseInput:
+      type: object
+      properties:
+        clientId:
+          type: ["integer", "null"]
+        category:
+          type: string
+          enum: [electricity, rent, repairs, salary, other]
+        amount:
+          type: number
+        description:
+          type: ["string", "null"]
+        isRecurring:
+          type: boolean
+        date:
+          type: string
+      required:
+        - category
+        - amount
+        - isRecurring
+        - date
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        category:
+          type: ["string", "null"]
+        amount:
+          type: ["number", "null"]
+        description:
+          type: ["string", "null"]
+        isRecurring:
+          type: ["boolean", "null"]
+        date:
+          type: ["string", "null"]
+
+    # ── Reports ──────────────────────────────────────────────────────────────
+    SalesReport:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        totalCost:
+          type: number
+        totalProfit:
+          type: number
+        totalExpenses:
+          type: number
+        netProfit:
+          type: number
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalesReportRow"
+      required:
+        - totalRevenue
+        - totalCost
+        - totalProfit
+        - totalExpenses
+        - netProfit
+        - rows
+
+    SalesReportRow:
+      type: object
+      properties:
+        date:
+          type: string
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        clientMachineId:
+          type: integer
+        machineNumber:
+          type: string
+        machineName:
+          type: string
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: number
+        revenue:
+          type: number
+        cost:
+          type: number
+        profit:
+          type: number
+      required:
+        - date
+        - clientId
+        - clientName
+        - clientMachineId
+        - machineNumber
+        - machineName
+        - productId
+        - productName
+        - quantity
+        - revenue
+        - cost
+        - profit
+
+    # ── Change Logs ──────────────────────────────────────────────────────────
+    ChangeLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        operatorId:
+          type: integer
+        operatorName:
+          type: string
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        details:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - operatorId
+        - operatorName
+        - action
+        - entity
+        - createdAt
+
+    # ── Dashboard ─────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        totalCost:
+          type: number
+        totalProfit:
+          type: number
+        totalExpenses:
+          type: number
+        netProfit:
+          type: number
+        totalClients:
+          type: integer
+        totalMachines:
+          type: integer
+        totalLoads:
+          type: integer
+        clientStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientStat"
+      required:
+        - totalRevenue
+        - totalCost
+        - totalProfit
+        - totalExpenses
+        - netProfit
+        - totalClients
+        - totalMachines
+        - totalLoads
+        - clientStats
+
+    ClientStat:
+      type: object
+      properties:
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        revenue:
+          type: number
+        cost:
+          type: number
+        profit:
+          type: number
+        expenses:
+          type: number
+        netProfit:
+          type: number
+        machineCount:
+          type: integer
+        loadCount:
+          type: integer
+      required:
+        - clientId
+        - clientName
+        - revenue
+        - cost
+        - profit
+        - expenses
+        - netProfit
+        - machineCount
+        - loadCount
+
+    TopProductsResult:
+      type: object
+      properties:
+        topSelling:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductStat"
+        bottomSelling:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductStat"
+      required:
+        - topSelling
+        - bottomSelling
+
+    ProductStat:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        totalQuantity:
+          type: number
+        totalRevenue:
+          type: number
+        totalProfit:
+          type: number
+      required:
+        - productId
+        - productName
+        - totalQuantity
+        - totalRevenue
+        - totalProfit
