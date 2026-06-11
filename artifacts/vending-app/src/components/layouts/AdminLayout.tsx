@@ -2,13 +2,15 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Coffee, LogOut, LayoutDashboard, Users, Container, Package, ArrowRightLeft, UserCircle, CalendarDays, Receipt, FileText, ActivitySquare } from "lucide-react";
-import { useLogout } from "@workspace/api-client-react";
+import { useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { isAdmin, isModerator, session, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
   const logout = useLogout();
+  const queryClient = useQueryClient();
 
   React.useEffect(() => {
     if (!isLoading && !session) {
@@ -21,6 +23,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
+        queryClient.removeQueries({ queryKey: getGetMeQueryKey() });
         setLocation("/");
       }
     });
