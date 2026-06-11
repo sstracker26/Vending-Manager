@@ -27,8 +27,8 @@ export default function Dashboard() {
     }
   });
 
-  const formatBGN = (value: number) => {
-    return new Intl.NumberFormat("bg-BG", { style: "currency", currency: "BGN" }).format(value);
+  const formatEUR = (value: number) => {
+    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
   };
 
   if (statsLoading || productsLoading) {
@@ -69,7 +69,7 @@ export default function Dashboard() {
                 <Banknote className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatBGN(stats.totalRevenue)}</div>
+                <div className="text-2xl font-bold">{formatEUR(stats.totalRevenue)}</div>
               </CardContent>
             </Card>
             <Card>
@@ -83,7 +83,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className={`text-2xl font-bold ${stats.netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
-                  {formatBGN(stats.netProfit)}
+                  {formatEUR(stats.netProfit)}
                 </div>
               </CardContent>
             </Card>
@@ -93,7 +93,7 @@ export default function Dashboard() {
                 <ArrowDownRight className="h-4 w-4 text-destructive" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatBGN(stats.totalExpenses)}</div>
+                <div className="text-2xl font-bold">{formatEUR(stats.totalExpenses)}</div>
               </CardContent>
             </Card>
             <Card>
@@ -138,7 +138,7 @@ export default function Dashboard() {
                     <BarChart data={topProducts.topSelling} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <XAxis type="number" hide />
                       <YAxis dataKey="productName" type="category" width={100} tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value: number) => formatBGN(value)} cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+                      <Tooltip formatter={(value: number) => formatEUR(value)} cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
                       <Bar dataKey="totalRevenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
                         {topProducts.topSelling.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill="hsl(var(--primary))" />
@@ -163,7 +163,7 @@ export default function Dashboard() {
                     <BarChart data={topProducts.bottomSelling} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <XAxis type="number" hide />
                       <YAxis dataKey="productName" type="category" width={100} tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value: number) => formatBGN(value)} cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+                      <Tooltip formatter={(value: number) => formatEUR(value)} cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
                       <Bar dataKey="totalRevenue" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]}>
                         {topProducts.bottomSelling.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill="hsl(var(--destructive))" />
@@ -202,9 +202,9 @@ export default function Dashboard() {
                         <td className="px-4 py-3 font-medium">{client.clientName}</td>
                         <td className="px-4 py-3 text-right">{client.machineCount}</td>
                         <td className="px-4 py-3 text-right">{client.loadCount}</td>
-                        <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">{formatBGN(client.revenue)}</td>
-                        <td className="px-4 py-3 text-right text-destructive">{formatBGN(client.expenses)}</td>
-                        <td className="px-4 py-3 text-right font-bold">{formatBGN(client.netProfit)}</td>
+                        <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">{formatEUR(client.revenue)}</td>
+                        <td className="px-4 py-3 text-right text-destructive">{formatEUR(client.expenses)}</td>
+                        <td className="px-4 py-3 text-right font-bold">{formatEUR(client.netProfit)}</td>
                       </tr>
                     ))}
                     {stats.clientStats.length === 0 && (

@@ -91,8 +91,8 @@ export default function Stock() {
     });
   };
 
-  const formatBGN = (value: number) => {
-    return new Intl.NumberFormat("bg-BG", { style: "currency", currency: "BGN" }).format(value);
+  const formatEUR = (value: number) => {
+    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
   };
 
   const filteredStock = stockLevels?.filter(s => 
@@ -166,13 +166,13 @@ export default function Stock() {
                     <TableRow key={item.productId}>
                       <TableCell className="font-medium">{item.productName}</TableCell>
                       <TableCell className="capitalize">{item.productType}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{formatBGN(item.purchasePrice)}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{formatEUR(item.purchasePrice)}</TableCell>
                       <TableCell className="text-right font-medium">
                         <span className={item.quantity <= 10 ? 'text-destructive font-bold' : ''}>
                           {item.quantity} {item.unit}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">{formatBGN(item.quantity * item.purchasePrice)}</TableCell>
+                      <TableCell className="text-right">{formatEUR(item.quantity * item.purchasePrice)}</TableCell>
                     </TableRow>
                   ))
                 )}

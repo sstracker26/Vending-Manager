@@ -47,7 +47,7 @@ A full-stack vending machine management system for a Bulgarian company. Two pane
 ## User preferences
 
 - Bulgarian UI labels and sample data
-- Currency: BGN (лв)
+- Currency: EUR (€)
 - Date format: DD.MM.YYYY
 
 ## Admin Credentials

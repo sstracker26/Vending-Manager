@@ -113,8 +113,8 @@ export default function Products() {
     }
   };
 
-  const formatBGN = (value: number) => {
-    return new Intl.NumberFormat("bg-BG", { style: "currency", currency: "BGN" }).format(value);
+  const formatEUR = (value: number) => {
+    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
   };
 
   const filteredProducts = products?.filter(p => 
@@ -186,11 +186,11 @@ export default function Products() {
                       </div>
                     </TableCell>
                     <TableCell className="capitalize">{product.type}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{formatBGN(product.purchasePrice)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatBGN(product.salePrice)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{formatEUR(product.purchasePrice)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatEUR(product.salePrice)}</TableCell>
                     <TableCell className="text-right">
                       <span className={`text-xs px-2 py-1 rounded ${margin > 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-                        {formatBGN(margin)} ({marginPercent.toFixed(0)}%)
+                        {formatEUR(margin)} ({marginPercent.toFixed(0)}%)
                       </span>
                     </TableCell>
                     <TableCell className="text-right font-medium">
@@ -297,7 +297,7 @@ export default function Products() {
                   name="purchasePrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Purchase Price (BGN)</FormLabel>
+                      <FormLabel>Purchase Price (EUR)</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" {...field} />
                       </FormControl>
@@ -310,7 +310,7 @@ export default function Products() {
                   name="salePrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sale Price (BGN)</FormLabel>
+                      <FormLabel>Sale Price (EUR)</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" {...field} />
                       </FormControl>

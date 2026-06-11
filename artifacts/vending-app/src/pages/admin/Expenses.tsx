@@ -132,8 +132,8 @@ export default function Expenses() {
     }
   };
 
-  const formatBGN = (value: number) => {
-    return new Intl.NumberFormat("bg-BG", { style: "currency", currency: "BGN" }).format(value);
+  const formatEUR = (value: number) => {
+    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
   };
 
   const filteredExpenses = expenses?.filter(e => 
@@ -244,7 +244,7 @@ export default function Expenses() {
                     {expense.description || "-"}
                   </TableCell>
                   <TableCell className="text-right text-destructive font-bold">
-                    {formatBGN(expense.amount)}
+                    {formatEUR(expense.amount)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -268,7 +268,7 @@ export default function Expenses() {
         {!isLoading && filteredExpenses.length > 0 && (
           <div className="bg-muted/30 p-4 border-t flex justify-end items-center gap-4">
             <span className="text-muted-foreground">Total for view:</span>
-            <span className="text-xl font-bold text-destructive">{formatBGN(totalAmount)}</span>
+            <span className="text-xl font-bold text-destructive">{formatEUR(totalAmount)}</span>
           </div>
         )}
       </div>
@@ -304,7 +304,7 @@ export default function Expenses() {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (BGN)</FormLabel>
+                      <FormLabel>Amount (EUR)</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" {...field} />
                       </FormControl>

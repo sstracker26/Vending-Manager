@@ -39,8 +39,8 @@ export default function Reports() {
     toast({ title: "Export Started", description: "Your Excel report is being generated and will download shortly." });
   };
 
-  const formatBGN = (value: number) => {
-    return new Intl.NumberFormat("bg-BG", { style: "currency", currency: "BGN" }).format(value);
+  const formatEUR = (value: number) => {
+    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
   };
 
   return (
@@ -111,24 +111,24 @@ export default function Reports() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-card border rounded-lg p-4 shadow-sm">
             <p className="text-xs text-muted-foreground uppercase font-semibold">Revenue</p>
-            <p className="text-xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">{formatBGN(report.totalRevenue)}</p>
+            <p className="text-xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">{formatEUR(report.totalRevenue)}</p>
           </div>
           <div className="bg-card border rounded-lg p-4 shadow-sm">
             <p className="text-xs text-muted-foreground uppercase font-semibold">COGS (Cost of goods)</p>
-            <p className="text-xl font-bold mt-1">{formatBGN(report.totalCost)}</p>
+            <p className="text-xl font-bold mt-1">{formatEUR(report.totalCost)}</p>
           </div>
           <div className="bg-card border rounded-lg p-4 shadow-sm">
             <p className="text-xs text-muted-foreground uppercase font-semibold">Gross Profit</p>
-            <p className="text-xl font-bold mt-1">{formatBGN(report.totalProfit)}</p>
+            <p className="text-xl font-bold mt-1">{formatEUR(report.totalProfit)}</p>
           </div>
           <div className="bg-card border rounded-lg p-4 shadow-sm">
             <p className="text-xs text-muted-foreground uppercase font-semibold">Expenses in period</p>
-            <p className="text-xl font-bold mt-1 text-destructive">{formatBGN(report.totalExpenses)}</p>
+            <p className="text-xl font-bold mt-1 text-destructive">{formatEUR(report.totalExpenses)}</p>
           </div>
           <div className="bg-card border rounded-lg p-4 shadow-sm border-primary/50 bg-primary/5">
             <p className="text-xs text-muted-foreground uppercase font-semibold">Net Profit</p>
             <p className={`text-xl font-bold mt-1 ${report.netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
-              {formatBGN(report.netProfit)}
+              {formatEUR(report.netProfit)}
             </p>
           </div>
         </div>
@@ -171,9 +171,9 @@ export default function Reports() {
                     </TableCell>
                     <TableCell>{row.productName}</TableCell>
                     <TableCell className="text-right font-medium">{row.quantity}</TableCell>
-                    <TableCell className="text-right text-emerald-600 dark:text-emerald-400">{formatBGN(row.revenue)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{formatBGN(row.cost)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatBGN(row.profit)}</TableCell>
+                    <TableCell className="text-right text-emerald-600 dark:text-emerald-400">{formatEUR(row.revenue)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{formatEUR(row.cost)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatEUR(row.profit)}</TableCell>
                   </TableRow>
                 ))
               )}
