@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   useListClients, 
   useListClientMachines, 
@@ -9,10 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, MapPin, Coffee, Users, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, MapPin, Coffee, Users, Package, QrCode, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { QrScannerDialog } from "@/components/QrScannerDialog";
 
 interface LoadItem {
   productId: number;
@@ -24,20 +26,58 @@ export default function OperatorHome() {
   const [machineId, setMachineId] = useState<number | null>(null);
   const [operatorId, setOperatorId] = useState<number | null>(null);
   const [items, setItems] = useState<LoadItem[]>([]);
-  
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannedBadge, setScannedBadge] = useState<string | null>(null);
+
   const { data: clients } = useListClients();
   const { data: machines } = useListClientMachines(clientId || 0, {
     query: { enabled: !!clientId }
   });
   const { data: products } = useListProducts();
   const { data: operators } = useListOperators();
-  
+
   const createLoad = useCreateMachineLoad();
   const { toast } = useToast();
+
+  // Handle QR code URL params on page load (when opened via QR code link directly)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qrClientId = parseInt(params.get("clientId") ?? "");
+    const qrMachineId = parseInt(params.get("machineId") ?? "");
+    if (!isNaN(qrClientId) && !isNaN(qrMachineId)) {
+      setClientId(qrClientId);
+      setMachineId(qrMachineId);
+      // Clean the URL without reload
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Set badge label when client+machine are filled (from scan or URL)
+  useEffect(() => {
+    if (clientId && machines && machineId) {
+      const cm = machines.find(m => m.id === machineId);
+      const client = clients?.find(c => c.id === clientId);
+      if (cm && client) {
+        setScannedBadge(`${client.name} — ${cm.machineName} #${cm.machineNumber}`);
+      }
+    } else {
+      setScannedBadge(null);
+    }
+  }, [clientId, machineId, machines, clients]);
 
   const handleClientChange = (val: string) => {
     setClientId(parseInt(val));
     setMachineId(null);
+    setScannedBadge(null);
+  };
+
+  const handleQrScan = (scannedClientId: number, scannedMachineId: number) => {
+    setClientId(scannedClientId);
+    setMachineId(scannedMachineId);
+    toast({
+      title: "QR Code Scanned!",
+      description: "Machine location auto-filled. Select your name and add items.",
+    });
   };
 
   const addItem = () => {
@@ -76,6 +116,7 @@ export default function OperatorHome() {
         setClientId(null);
         setMachineId(null);
         setItems([]);
+        setScannedBadge(null);
       }
     });
   };
@@ -91,12 +132,31 @@ export default function OperatorHome() {
       </div>
 
       <Card className="border-primary/20 shadow-md">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Location & Staff</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+            onClick={() => setScannerOpen(true)}
+          >
+            <QrCode className="w-4 h-4" />
+            Scan QR
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
+          {scannedBadge && (
+            <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm font-medium text-primary">{scannedBadge}</span>
+              <Badge variant="secondary" className="ml-auto text-xs">QR Scanned</Badge>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label className="flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground" /> Client Location</Label>
+            <Label className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground" /> Client Location
+            </Label>
             <Select onValueChange={handleClientChange} value={clientId?.toString() || ""}>
               <SelectTrigger>
                 <SelectValue placeholder="Select client" />
@@ -110,7 +170,9 @@ export default function OperatorHome() {
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-2"><Coffee className="w-4 h-4 text-muted-foreground" /> Machine</Label>
+            <Label className="flex items-center gap-2">
+              <Coffee className="w-4 h-4 text-muted-foreground" /> Machine
+            </Label>
             <Select 
               disabled={!clientId} 
               onValueChange={(v) => setMachineId(parseInt(v))} 
@@ -130,7 +192,9 @@ export default function OperatorHome() {
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-2"><Users className="w-4 h-4 text-muted-foreground" /> Operator</Label>
+            <Label className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" /> Operator
+            </Label>
             <Select onValueChange={(v) => setOperatorId(parseInt(v))} value={operatorId?.toString() || ""}>
               <SelectTrigger>
                 <SelectValue placeholder="Select your name" />
@@ -189,7 +253,12 @@ export default function OperatorHome() {
                       onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value))} 
                     />
                   </div>
-                  <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 shrink-0 mb-[2px]" onClick={() => removeItem(index)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:bg-destructive/10 shrink-0 mb-[2px]"
+                    onClick={() => removeItem(index)}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -207,6 +276,12 @@ export default function OperatorHome() {
           </Button>
         </CardFooter>
       </Card>
+
+      <QrScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleQrScan}
+      />
     </div>
   );
 }
