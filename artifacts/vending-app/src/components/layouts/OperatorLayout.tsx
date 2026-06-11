@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "wouter";
-import { Coffee, Calendar, MapPin } from "lucide-react";
+import { Coffee, Calendar, MapPin, ShieldCheck } from "lucide-react";
 
 export function OperatorLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +12,7 @@ export function OperatorLayout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-lg tracking-tight hidden lg:block text-sidebar-foreground">VendingPro</span>
           </div>
         </div>
-        <nav className="flex-1 p-2 md:p-4 space-y-2 overflow-y-auto flex md:flex-col justify-center md:justify-start">
+        <nav className="flex-1 p-2 md:p-4 space-y-1 overflow-y-auto flex md:flex-col justify-center md:justify-start">
           <Link href="/" className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground justify-center lg:justify-start">
             <MapPin className="w-5 h-5 flex-shrink-0" />
             <span className="font-medium hidden lg:block">Machine Load</span>
@@ -21,6 +21,12 @@ export function OperatorLayout({ children }: { children: React.ReactNode }) {
             <Calendar className="w-5 h-5 flex-shrink-0" />
             <span className="font-medium hidden lg:block">Schedule</span>
           </Link>
+          <div className="pt-2 mt-2 border-t border-sidebar-border/50">
+            <Link href="/admin/login" className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground justify-center lg:justify-start">
+              <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+              <span className="font-medium hidden lg:block text-sm">Admin Panel</span>
+            </Link>
+          </div>
         </nav>
       </aside>
       <main className="flex-1 overflow-x-hidden relative">
