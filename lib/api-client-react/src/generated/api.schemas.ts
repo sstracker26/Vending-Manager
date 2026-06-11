@@ -184,6 +184,7 @@ export interface Product {
   salePrice: number;
   unit: string;
   stockQuantity: number;
+  minStockQuantity: number;
   /** @nullable */
   notes?: string | null;
   createdAt: string;
@@ -203,6 +204,7 @@ export interface ProductInput {
   purchasePrice: number;
   salePrice: number;
   unit: string;
+  minStockQuantity?: number;
   /** @nullable */
   notes?: string | null;
 }
@@ -217,7 +219,17 @@ export interface ProductUpdate {
   /** @nullable */
   unit?: string | null;
   /** @nullable */
+  minStockQuantity?: number | null;
+  /** @nullable */
   notes?: string | null;
+}
+
+export interface LowStockAlert {
+  productId: number;
+  productName: string;
+  unit: string;
+  stockQuantity: number;
+  minStockQuantity: number;
 }
 
 export type OperatorType = typeof OperatorType[keyof typeof OperatorType];

@@ -516,6 +516,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/StockLevel"
 
+  /stock/alerts:
+    get:
+      operationId: getStockAlerts
+      tags: [stock]
+      summary: Get products below minimum stock quantity
+      responses:
+        "200":
+          description: List of low-stock products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LowStockAlert"
+
   /stock/movements:
     get:
       operationId: listStockMovements
@@ -1117,6 +1132,8 @@ components:
           type: string
         stockQuantity:
           type: number
+        minStockQuantity:
+          type: number
         notes:
           type: ["string", "null"]
         createdAt:
@@ -1129,6 +1146,7 @@ components:
         - salePrice
         - unit
         - stockQuantity
+        - minStockQuantity
         - createdAt
 
     ProductInput:
@@ -1145,6 +1163,8 @@ components:
           type: number
         unit:
           type: string
+        minStockQuantity:
+          type: number
         notes:
           type: ["string", "null"]
       required:
@@ -1165,8 +1185,30 @@ components:
           type: ["number", "null"]
         unit:
           type: ["string", "null"]
+        minStockQuantity:
+          type: ["number", "null"]
         notes:
           type: ["string", "null"]
+
+    LowStockAlert:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        unit:
+          type: string
+        stockQuantity:
+          type: number
+        minStockQuantity:
+          type: number
+      required:
+        - productId
+        - productName
+        - unit
+        - stockQuantity
+        - minStockQuantity
 
     # ── Operator ─────────────────────────────────────────────────────────────
     Operator:

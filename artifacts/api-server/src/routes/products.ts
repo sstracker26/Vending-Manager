@@ -29,6 +29,7 @@ router.get("/products", async (_req, res): Promise<void> => {
     ...p,
     purchasePrice: parseFloat(p.purchasePrice),
     salePrice: parseFloat(p.salePrice),
+    minStockQuantity: parseFloat(p.minStockQuantity),
     stockQuantity: await getStockQuantity(p.id),
     createdAt: p.createdAt.toISOString(),
   })));
@@ -42,10 +43,11 @@ router.post("/products", async (req, res): Promise<void> => {
     ...parsed.data,
     purchasePrice: String(parsed.data.purchasePrice),
     salePrice: String(parsed.data.salePrice),
+    minStockQuantity: String(parsed.data.minStockQuantity ?? 0),
   }).returning();
   const opId = req.session?.operatorId;
   if (opId) await db.insert(changeLogsTable).values({ operatorId: opId, action: "create", entity: "product", entityId: product.id, details: `Created product: ${product.name}` });
-  res.status(201).json({ ...product, purchasePrice: parseFloat(product.purchasePrice), salePrice: parseFloat(product.salePrice), stockQuantity: 0, createdAt: product.createdAt.toISOString() });
+  res.status(201).json({ ...product, purchasePrice: parseFloat(product.purchasePrice), salePrice: parseFloat(product.salePrice), minStockQuantity: parseFloat(product.minStockQuantity), stockQuantity: 0, createdAt: product.createdAt.toISOString() });
 });
 
 router.get("/products/:id", async (req, res): Promise<void> => {
@@ -54,7 +56,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, params.data.id));
   if (!product) { res.status(404).json({ error: "Product not found" }); return; }
   const stockQuantity = await getStockQuantity(product.id);
-  res.json({ ...product, purchasePrice: parseFloat(product.purchasePrice), salePrice: parseFloat(product.salePrice), stockQuantity, createdAt: product.createdAt.toISOString() });
+  res.json({ ...product, purchasePrice: parseFloat(product.purchasePrice), salePrice: parseFloat(product.salePrice), minStockQuantity: parseFloat(product.minStockQuantity), stockQuantity, createdAt: product.createdAt.toISOString() });
 });
 
 router.patch("/products/:id", async (req, res): Promise<void> => {
@@ -64,16 +66,18 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const data: Record<string, unknown> = {};
   if (parsed.data.name != null) data.name = parsed.data.name;
+  if (parsed.data.type != null) data.type = parsed.data.type;
   if (parsed.data.purchasePrice != null) data.purchasePrice = String(parsed.data.purchasePrice);
   if (parsed.data.salePrice != null) data.salePrice = String(parsed.data.salePrice);
   if (parsed.data.unit != null) data.unit = parsed.data.unit;
+  if (parsed.data.minStockQuantity != null) data.minStockQuantity = String(parsed.data.minStockQuantity);
   if (parsed.data.notes !== undefined) data.notes = parsed.data.notes;
   const [product] = await db.update(productsTable).set(data).where(eq(productsTable.id, params.data.id)).returning();
   if (!product) { res.status(404).json({ error: "Product not found" }); return; }
   const opId = req.session?.operatorId;
   if (opId) await db.insert(changeLogsTable).values({ operatorId: opId, action: "update", entity: "product", entityId: product.id, details: `Updated product: ${product.name}` });
   const stockQuantity = await getStockQuantity(product.id);
-  res.json({ ...product, purchasePrice: parseFloat(product.purchasePrice), salePrice: parseFloat(product.salePrice), stockQuantity, createdAt: product.createdAt.toISOString() });
+  res.json({ ...product, purchasePrice: parseFloat(product.purchasePrice), salePrice: parseFloat(product.salePrice), minStockQuantity: parseFloat(product.minStockQuantity), stockQuantity, createdAt: product.createdAt.toISOString() });
 });
 
 router.delete("/products/:id", async (req, res): Promise<void> => {

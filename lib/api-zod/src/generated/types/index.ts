@@ -32,6 +32,7 @@ export * from './listLogsParams';
 export * from './listMachineLoadsParams';
 export * from './listStockMovementsParams';
 export * from './loginInput';
+export * from './lowStockAlert';
 export * from './machine';
 export * from './machineInput';
 export * from './machineInputType';

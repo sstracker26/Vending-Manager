@@ -15,6 +15,7 @@ export interface Product {
   salePrice: number;
   unit: string;
   stockQuantity: number;
+  minStockQuantity: number;
   /** @nullable */
   notes?: string | null;
   createdAt: string;

@@ -255,6 +255,7 @@ export const ListProductsResponseItem = zod.object({
   "salePrice": zod.number(),
   "unit": zod.string(),
   "stockQuantity": zod.number(),
+  "minStockQuantity": zod.number(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -270,6 +271,7 @@ export const CreateProductBody = zod.object({
   "purchasePrice": zod.number(),
   "salePrice": zod.number(),
   "unit": zod.string(),
+  "minStockQuantity": zod.number().optional(),
   "notes": zod.string().nullish()
 })
 
@@ -286,6 +288,7 @@ export const GetProductResponse = zod.object({
   "salePrice": zod.number(),
   "unit": zod.string(),
   "stockQuantity": zod.number(),
+  "minStockQuantity": zod.number(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -300,6 +303,7 @@ export const UpdateProductBody = zod.object({
   "purchasePrice": zod.number().nullish(),
   "salePrice": zod.number().nullish(),
   "unit": zod.string().nullish(),
+  "minStockQuantity": zod.number().nullish(),
   "notes": zod.string().nullish()
 })
 
@@ -311,6 +315,7 @@ export const UpdateProductResponse = zod.object({
   "salePrice": zod.number(),
   "unit": zod.string(),
   "stockQuantity": zod.number(),
+  "minStockQuantity": zod.number(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -396,6 +401,19 @@ export const ListStockResponseItem = zod.object({
   "salePrice": zod.number()
 })
 export const ListStockResponse = zod.array(ListStockResponseItem)
+
+
+/**
+ * @summary Get products below minimum stock quantity
+ */
+export const GetStockAlertsResponseItem = zod.object({
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "unit": zod.string(),
+  "stockQuantity": zod.number(),
+  "minStockQuantity": zod.number()
+})
+export const GetStockAlertsResponse = zod.array(GetStockAlertsResponseItem)
 
 
 /**

@@ -28,6 +28,24 @@ router.get("/stock", async (_req, res): Promise<void> => {
   res.json(result);
 });
 
+router.get("/stock/alerts", async (_req, res): Promise<void> => {
+  const products = await db.select().from(productsTable).orderBy(productsTable.name);
+  const alerts = await Promise.all(products.map(async p => {
+    const msq = parseFloat(p.minStockQuantity);
+    if (msq <= 0) return null;
+    const [row] = await db
+      .select({ qty: sql<string>`COALESCE(SUM(CASE WHEN type = 'in' THEN quantity::numeric ELSE -quantity::numeric END), 0)` })
+      .from(stockMovementsTable)
+      .where(eq(stockMovementsTable.productId, p.id));
+    const qty = parseFloat(row?.qty ?? "0");
+    if (qty < msq) {
+      return { productId: p.id, productName: p.name, unit: p.unit, stockQuantity: qty, minStockQuantity: msq };
+    }
+    return null;
+  }));
+  res.json(alerts.filter(Boolean));
+});
+
 router.get("/stock/movements", async (req, res): Promise<void> => {
   const qp = ListStockMovementsQueryParams.safeParse(req.query);
   if (!qp.success) { res.status(400).json({ error: qp.error.message }); return; }

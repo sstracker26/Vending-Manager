@@ -42,6 +42,7 @@ import type {
   ListMachineLoadsParams,
   ListStockMovementsParams,
   LoginInput,
+  LowStockAlert,
   Machine,
   MachineInput,
   MachineLoad,
@@ -2052,6 +2053,83 @@ export function useListStock<TData = Awaited<ReturnType<typeof listStock>>, TErr
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListStockQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetStockAlertsUrl = () => {
+
+
+
+
+  return `/api/stock/alerts`
+}
+
+/**
+ * @summary Get products below minimum stock quantity
+ */
+export const getStockAlerts = async ( options?: RequestInit): Promise<LowStockAlert[]> => {
+
+  return customFetch<LowStockAlert[]>(getGetStockAlertsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStockAlertsQueryKey = () => {
+    return [
+    `/api/stock/alerts`
+    ] as const;
+    }
+
+
+export const getGetStockAlertsQueryOptions = <TData = Awaited<ReturnType<typeof getStockAlerts>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStockAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStockAlertsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStockAlerts>>> = ({ signal }) => getStockAlerts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStockAlerts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStockAlertsQueryResult = NonNullable<Awaited<ReturnType<typeof getStockAlerts>>>
+export type GetStockAlertsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get products below minimum stock quantity
+ */
+
+export function useGetStockAlerts<TData = Awaited<ReturnType<typeof getStockAlerts>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStockAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStockAlertsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

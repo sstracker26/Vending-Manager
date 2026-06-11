@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useGetDashboardStats, useGetDashboardTopProducts } from "@workspace/api-client-react";
+import { useGetDashboardStats, useGetDashboardTopProducts, useGetStockAlerts } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Banknote, TrendingUp, TrendingDown, ArrowDownRight, ArrowUpRight, Package, Users, Container, ShoppingCart } from "lucide-react";
+import { Banknote, TrendingUp, TrendingDown, ArrowDownRight, ArrowUpRight, Package, Users, Container, ShoppingCart, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const [dateFrom, setDateFrom] = useState("");
@@ -26,6 +27,8 @@ export default function Dashboard() {
       query: { dateFrom: dateFrom || undefined, dateTo: dateTo || undefined }
     }
   });
+
+  const { data: stockAlerts } = useGetStockAlerts();
 
   const formatEUR = (value: number) => {
     return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
@@ -59,6 +62,55 @@ export default function Dashboard() {
           />
         </div>
       </div>
+
+      {stockAlerts && stockAlerts.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-400">
+              <AlertTriangle className="w-5 h-5" />
+              Low Stock Alerts ({stockAlerts.length})
+            </CardTitle>
+            <CardDescription className="text-amber-700 dark:text-amber-500">
+              The following products have fallen below their minimum stock quantity.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {stockAlerts.map(alert => {
+                const pct = alert.minStockQuantity > 0
+                  ? Math.min(100, Math.round((alert.stockQuantity / alert.minStockQuantity) * 100))
+                  : 0;
+                return (
+                  <div key={alert.productId} className="flex items-center justify-between p-3 rounded-md bg-white dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Package className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{alert.productName}</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-500">
+                          {alert.stockQuantity} / {alert.minStockQuantity} {alert.unit} min
+                        </p>
+                      </div>
+                    </div>
+                    <div className="ml-3 shrink-0">
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${
+                        pct === 0 ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                      }`}>
+                        {pct}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 text-right">
+              <Link href="/admin/stock" className="text-xs text-amber-700 dark:text-amber-500 underline hover:no-underline">
+                Go to Stock Management →
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {stats && (
         <>

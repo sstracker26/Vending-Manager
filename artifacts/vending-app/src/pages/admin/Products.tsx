@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Search, Edit2, Trash2, Package } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Package, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 
@@ -21,6 +21,7 @@ const productSchema = z.object({
   purchasePrice: z.coerce.number().min(0),
   salePrice: z.coerce.number().min(0),
   unit: z.string().min(1, "Unit is required"),
+  minStockQuantity: z.coerce.number().min(0),
   notes: z.string().optional().nullable(),
 });
 
@@ -47,7 +48,8 @@ export default function Products() {
       type: "vending",
       purchasePrice: 0,
       salePrice: 0,
-      unit: "pcs",
+      unit: "бр",
+      minStockQuantity: 0,
       notes: "",
     },
   });
@@ -58,7 +60,8 @@ export default function Products() {
       type: "vending",
       purchasePrice: 0,
       salePrice: 0,
-      unit: "pcs",
+      unit: "бр",
+      minStockQuantity: 0,
       notes: "",
     });
     setIsCreateOpen(true);
@@ -72,6 +75,7 @@ export default function Products() {
       purchasePrice: product.purchasePrice,
       salePrice: product.salePrice,
       unit: product.unit,
+      minStockQuantity: product.minStockQuantity,
       notes: product.notes || "",
     });
   };
@@ -160,29 +164,34 @@ export default function Products() {
               <TableHead className="text-right">Sale Price</TableHead>
               <TableHead className="text-right">Margin</TableHead>
               <TableHead className="text-right">Stock</TableHead>
+              <TableHead className="text-right">Min Stock</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">Loading products...</TableCell>
+                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">Loading products...</TableCell>
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No products found</TableCell>
+                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">No products found</TableCell>
               </TableRow>
             ) : (
               filteredProducts.map((product) => {
                 const margin = product.salePrice - product.purchasePrice;
                 const marginPercent = product.purchasePrice > 0 ? (margin / product.purchasePrice) * 100 : 0;
+                const isLowStock = product.minStockQuantity > 0 && product.stockQuantity < product.minStockQuantity;
                 
                 return (
-                  <TableRow key={product.id}>
+                  <TableRow key={product.id} className={isLowStock ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <Package className="w-4 h-4 text-muted-foreground" />
                         {product.name}
+                        {isLowStock && (
+                          <AlertTriangle className="w-4 h-4 text-amber-500" title="Low stock!" />
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="capitalize">{product.type}</TableCell>
@@ -194,7 +203,12 @@ export default function Products() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {product.stockQuantity} {product.unit}
+                      <span className={isLowStock ? "text-amber-600 dark:text-amber-400 font-bold" : ""}>
+                        {product.stockQuantity} {product.unit}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {product.minStockQuantity > 0 ? `${product.minStockQuantity} ${product.unit}` : "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -279,10 +293,11 @@ export default function Products() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="pcs">Pieces (pcs)</SelectItem>
-                          <SelectItem value="kg">Kilograms (kg)</SelectItem>
-                          <SelectItem value="g">Grams (g)</SelectItem>
-                          <SelectItem value="cups">Cups</SelectItem>
+                          <SelectItem value="бр">Брой (бр)</SelectItem>
+                          <SelectItem value="чаша">Чаша (чаша)</SelectItem>
+                          <SelectItem value="кг">Килограми (кг)</SelectItem>
+                          <SelectItem value="г">Грамове (г)</SelectItem>
+                          <SelectItem value="л">Литри (л)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -319,6 +334,23 @@ export default function Products() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="minStockQuantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      Min Stock Quantity (MSQ)
+                      <span className="text-xs font-normal text-muted-foreground">— alerts when stock falls below this</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}

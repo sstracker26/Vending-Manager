@@ -16,5 +16,7 @@ export interface ProductUpdate {
   /** @nullable */
   unit?: string | null;
   /** @nullable */
+  minStockQuantity?: number | null;
+  /** @nullable */
   notes?: string | null;
 }

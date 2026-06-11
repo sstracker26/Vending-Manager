@@ -13,6 +13,7 @@ export interface ProductInput {
   purchasePrice: number;
   salePrice: number;
   unit: string;
+  minStockQuantity?: number;
   /** @nullable */
   notes?: string | null;
 }

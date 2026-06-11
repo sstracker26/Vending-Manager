@@ -162,19 +162,37 @@ export default function Stock() {
                     <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No stock data available</TableCell>
                   </TableRow>
                 ) : (
-                  filteredStock.map((item) => (
-                    <TableRow key={item.productId}>
-                      <TableCell className="font-medium">{item.productName}</TableCell>
-                      <TableCell className="capitalize">{item.productType}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{formatEUR(item.purchasePrice)}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        <span className={item.quantity <= 10 ? 'text-destructive font-bold' : ''}>
-                          {item.quantity} {item.unit}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">{formatEUR(item.quantity * item.purchasePrice)}</TableCell>
-                    </TableRow>
-                  ))
+                  filteredStock.map((item) => {
+                    const matchedProduct = products?.find(p => p.id === item.productId);
+                    const msq = matchedProduct?.minStockQuantity ?? 0;
+                    const isLow = msq > 0 && item.quantity < msq;
+                    return (
+                      <TableRow key={item.productId} className={isLow ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {item.productName}
+                            {isLow && (
+                              <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                Low stock
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="capitalize">{item.productType}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{formatEUR(item.purchasePrice)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          <span className={isLow ? "text-amber-600 dark:text-amber-400 font-bold" : ""}>
+                            {item.quantity} {item.unit}
+                          </span>
+                          {msq > 0 && (
+                            <span className="ml-1 text-xs text-muted-foreground">/ min {msq}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">{formatEUR(item.quantity * item.purchasePrice)}</TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
