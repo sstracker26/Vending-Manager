@@ -33,8 +33,13 @@ export default function OperatorHome() {
   const { data: machines } = useListClientMachines(clientId || 0, {
     query: { enabled: !!clientId }
   });
-  const { data: products } = useListProducts();
+  const { data: allProducts } = useListProducts();
   const { data: operators } = useListOperators();
+
+  const selectedMachine = machines?.find(m => m.id === machineId);
+  const products = selectedMachine
+    ? allProducts?.filter(p => p.type === selectedMachine.machineType)
+    : allProducts;
 
   const createLoad = useCreateMachineLoad();
   const { toast } = useToast();
@@ -68,6 +73,7 @@ export default function OperatorHome() {
   const handleClientChange = (val: string) => {
     setClientId(parseInt(val));
     setMachineId(null);
+    setItems([]);
     setScannedBadge(null);
   };
 
@@ -175,7 +181,7 @@ export default function OperatorHome() {
             </Label>
             <Select 
               disabled={!clientId} 
-              onValueChange={(v) => setMachineId(parseInt(v))} 
+              onValueChange={(v) => { setMachineId(parseInt(v)); setItems([]); }} 
               value={machineId?.toString() || ""}
             >
               <SelectTrigger>
