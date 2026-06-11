@@ -21,7 +21,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
-        setLocation("/admin/login");
+        setLocation("/");
       }
     });
   };
