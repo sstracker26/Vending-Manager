@@ -236,7 +236,12 @@ export default function OperatorHome() {
                   <div className="flex-1 space-y-2">
                     <Label>Product</Label>
                     <Select 
-                      onValueChange={(v) => updateItem(index, "productId", parseInt(v))} 
+                      onValueChange={(v) => {
+                        const prod = products?.find(p => p.id === parseInt(v));
+                        const isPiece = prod?.unit === "бр";
+                        updateItem(index, "productId", parseInt(v));
+                        if (isPiece) updateItem(index, "quantity", Math.round(item.quantity) || 1);
+                      }} 
                       value={item.productId ? item.productId.toString() : ""}
                     >
                       <SelectTrigger>
@@ -249,16 +254,28 @@ export default function OperatorHome() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="w-24 space-y-2">
-                    <Label>Qty</Label>
-                    <Input 
-                      type="number" 
-                      min="0.1" 
-                      step="0.1" 
-                      value={item.quantity} 
-                      onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value))} 
-                    />
-                  </div>
+                  {(() => {
+                    const prod = products?.find(p => p.id === item.productId);
+                    const isPiece = prod?.unit === "бр";
+                    return (
+                      <div className="w-28 space-y-2">
+                        <Label className="flex items-center gap-1">
+                          Qty
+                          {prod && <span className="text-xs text-muted-foreground font-normal">({prod.unit})</span>}
+                        </Label>
+                        <Input
+                          type="number"
+                          min={isPiece ? "1" : "0.1"}
+                          step={isPiece ? "1" : "0.1"}
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const raw = isPiece ? parseInt(e.target.value) : parseFloat(e.target.value);
+                            updateItem(index, "quantity", isNaN(raw) ? (isPiece ? 1 : 0.1) : raw);
+                          }}
+                        />
+                      </div>
+                    );
+                  })()}
                   <Button
                     variant="ghost"
                     size="icon"
