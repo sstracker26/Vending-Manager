@@ -24,6 +24,7 @@ export * from './expenseInputCategory';
 export * from './expenseUpdate';
 export * from './getDashboardStatsParams';
 export * from './getDashboardTopProductsParams';
+export * from './getNextMachineNumber200';
 export * from './getSalesReportParams';
 export * from './getScheduleExecutionParams';
 export * from './healthStatus';

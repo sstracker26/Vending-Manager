@@ -558,6 +558,10 @@ export interface TopProductsResult {
   bottomSelling: ProductStat[];
 }
 
+export type GetNextMachineNumber200 = {
+  nextNumber: string;
+};
+
 export type ListStockMovementsParams = {
 /**
  * @nullable

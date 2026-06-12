@@ -116,6 +116,14 @@ export const DeleteClientParams = zod.object({
 
 
 /**
+ * @summary Get the next auto-generated inventory number
+ */
+export const GetNextMachineNumberResponse = zod.object({
+  "nextNumber": zod.string()
+})
+
+
+/**
  * @summary List machines assigned to a client
  */
 export const ListClientMachinesParams = zod.object({

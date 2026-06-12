@@ -181,6 +181,24 @@ paths:
         "204":
           description: Deleted
 
+  /clients/machines/next-number:
+    get:
+      operationId: getNextMachineNumber
+      tags: [clients]
+      summary: Get the next auto-generated inventory number
+      responses:
+        "200":
+          description: Next machine number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nextNumber:
+                    type: string
+                required:
+                  - nextNumber
+
   /clients/{id}/machines:
     get:
       operationId: listClientMachines

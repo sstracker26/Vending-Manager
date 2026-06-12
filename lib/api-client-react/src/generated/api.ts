@@ -34,6 +34,7 @@ import type {
   ExpenseUpdate,
   GetDashboardStatsParams,
   GetDashboardTopProductsParams,
+  GetNextMachineNumber200,
   GetSalesReportParams,
   GetScheduleExecutionParams,
   HealthStatus,
@@ -719,6 +720,83 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDeleteClientMutationOptions(options));
     }
+
+export const getGetNextMachineNumberUrl = () => {
+
+
+
+
+  return `/api/clients/machines/next-number`
+}
+
+/**
+ * @summary Get the next auto-generated inventory number
+ */
+export const getNextMachineNumber = async ( options?: RequestInit): Promise<GetNextMachineNumber200> => {
+
+  return customFetch<GetNextMachineNumber200>(getGetNextMachineNumberUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNextMachineNumberQueryKey = () => {
+    return [
+    `/api/clients/machines/next-number`
+    ] as const;
+    }
+
+
+export const getGetNextMachineNumberQueryOptions = <TData = Awaited<ReturnType<typeof getNextMachineNumber>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNextMachineNumber>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNextMachineNumberQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNextMachineNumber>>> = ({ signal }) => getNextMachineNumber({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNextMachineNumber>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNextMachineNumberQueryResult = NonNullable<Awaited<ReturnType<typeof getNextMachineNumber>>>
+export type GetNextMachineNumberQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the next auto-generated inventory number
+ */
+
+export function useGetNextMachineNumber<TData = Awaited<ReturnType<typeof getNextMachineNumber>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNextMachineNumber>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNextMachineNumberQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListClientMachinesUrl = (id: number,) => {
 

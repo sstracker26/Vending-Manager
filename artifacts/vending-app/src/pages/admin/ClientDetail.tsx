@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useParams } from "wouter";
-import { useGetClient, useListClientMachines, useAssignMachineToClient, useRemoveClientMachine, useListMachines, getListClientMachinesQueryKey } from "@workspace/api-client-react";
+import { useGetClient, useListClientMachines, useAssignMachineToClient, useRemoveClientMachine, useListMachines, useGetNextMachineNumber, getListClientMachinesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { ArrowLeft, Coffee, MapPin, Phone, FileText, Plus, Trash2, QrCode } from "lucide-react";
+import { ArrowLeft, Coffee, MapPin, Phone, FileText, Plus, Trash2, QrCode, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/lib/auth";
@@ -23,25 +23,27 @@ const assignMachineSchema = z.object({
   installedAt: z.string().optional().nullable(),
 });
 
+interface QrTarget {
+  machineNumber: string;
+  url: string;
+}
+
 export default function ClientDetail() {
   const params = useParams();
   const clientId = Number(params.id);
   const { isAdmin } = useAuth();
   const canEdit = isAdmin;
   
-  const { data: client, isLoading: clientLoading } = useGetClient(clientId, {
-    query: { enabled: !!clientId }
-  });
-  
-  const { data: clientMachines, isLoading: machinesLoading } = useListClientMachines(clientId, {
-    query: { enabled: !!clientId }
-  });
+  const { data: client, isLoading: clientLoading } = useGetClient(clientId);
+  const { data: clientMachines, isLoading: machinesLoading } = useListClientMachines(clientId);
   
   const { data: availableMachines } = useListMachines();
+  const { data: nextNumberData } = useGetNextMachineNumber();
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [removeId, setRemoveId] = useState<number | null>(null);
-  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [qrTarget, setQrTarget] = useState<QrTarget | null>(null);
+  const qrPrintRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
   const assignMutation = useAssignMachineToClient();
@@ -60,7 +62,7 @@ export default function ClientDetail() {
   const handleOpenAssign = () => {
     form.reset({
       machineId: 0,
-      machineNumber: "",
+      machineNumber: nextNumberData?.nextNumber ?? "",
       installedAt: new Date().toISOString().split('T')[0],
     });
     setIsAssignOpen(true);
@@ -68,20 +70,24 @@ export default function ClientDetail() {
 
   const onSubmitAssign = (values: z.infer<typeof assignMachineSchema>) => {
     assignMutation.mutate({
-      clientId,
+      id: clientId,
       data: values,
     }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListClientMachinesQueryKey(clientId) });
         setIsAssignOpen(false);
         toast({ title: "Machine assigned successfully" });
+      },
+      onError: (err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Assignment failed";
+        toast({ title: "Error", description: msg, variant: "destructive" });
       }
     });
   };
 
   const confirmRemove = () => {
     if (removeId) {
-      removeMutation.mutate({ clientId, id: removeId }, {
+      removeMutation.mutate({ clientId, machineId: removeId }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListClientMachinesQueryKey(clientId) });
           setRemoveId(null);
@@ -89,6 +95,42 @@ export default function ClientDetail() {
         }
       });
     }
+  };
+
+  const getQrUrl = (machineId: number) => {
+    return `${window.location.origin}/?clientId=${clientId}&machineId=${machineId}`;
+  };
+
+  const handleShowQr = (machine: { id: number; machineNumber: string }) => {
+    setQrTarget({ machineNumber: machine.machineNumber, url: getQrUrl(machine.id) });
+  };
+
+  const handlePrint = () => {
+    if (!qrTarget) return;
+    const printWindow = window.open("", "_blank", "width=400,height=500");
+    if (!printWindow) return;
+    const svgEl = qrPrintRef.current?.querySelector("svg");
+    const svgHtml = svgEl ? svgEl.outerHTML : "";
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - ${qrTarget.machineNumber}</title>
+          <style>
+            body { font-family: sans-serif; text-align: center; padding: 32px; }
+            h2 { font-size: 20px; margin-bottom: 8px; }
+            p { font-size: 12px; color: #666; word-break: break-all; margin-top: 12px; }
+            svg { width: 240px; height: 240px; }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <h2>${qrTarget.machineNumber}</h2>
+          ${svgHtml}
+          <p>${qrTarget.url}</p>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   if (clientLoading) return <div className="p-8">Loading client details...</div>;
@@ -173,7 +215,7 @@ export default function ClientDetail() {
                       <div>
                         <p className="font-semibold">{machine.machineName}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="bg-secondary px-2 py-0.5 rounded text-secondary-foreground">#{machine.machineNumber}</span>
+                          <span className="bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-mono">#{machine.machineNumber}</span>
                           <span>•</span>
                           <span className="capitalize">{machine.machineType}</span>
                           {machine.installedAt && (
@@ -186,11 +228,14 @@ export default function ClientDetail() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {machine.qrCode && (
-                        <Button variant="ghost" size="icon" onClick={() => setQrCodeData(machine.qrCode!)}>
-                          <QrCode className="w-4 h-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Show QR code"
+                        onClick={() => handleShowQr(machine)}
+                      >
+                        <QrCode className="w-4 h-4" />
+                      </Button>
                       {canEdit && (
                         <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setRemoveId(machine.id)}>
                           <Trash2 className="w-4 h-4" />
@@ -217,20 +262,33 @@ export default function ClientDetail() {
       </div>
 
       {/* QR Code Dialog */}
-      <Dialog open={!!qrCodeData} onOpenChange={(open) => { if (!open) setQrCodeData(null); }}>
-        <DialogContent className="sm:max-w-md text-center">
+      <Dialog open={!!qrTarget} onOpenChange={(open) => { if (!open) setQrTarget(null); }}>
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-center">Machine QR Code</DialogTitle>
+            <DialogTitle className="text-center">
+              QR Code — <span className="font-mono">#{qrTarget?.machineNumber}</span>
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs">
+              Scan to open the operator load form for this machine
+            </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center py-8 bg-white rounded-md">
-            {qrCodeData && (
-              <QRCodeSVG value={qrCodeData} size={256} level="H" includeMargin={true} />
+          <div ref={qrPrintRef} className="flex justify-center py-6 bg-white rounded-md">
+            {qrTarget && (
+              <QRCodeSVG value={qrTarget.url} size={220} level="H" includeMargin={true} />
             )}
           </div>
-          <p className="text-sm text-muted-foreground break-all">{qrCodeData}</p>
+          <p className="text-xs text-muted-foreground text-center break-all px-2">{qrTarget?.url}</p>
+          <DialogFooter className="flex gap-2 sm:justify-center">
+            <Button variant="outline" onClick={() => setQrTarget(null)}>Close</Button>
+            <Button onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Assign Machine Dialog */}
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent>
           <DialogHeader>
@@ -268,9 +326,12 @@ export default function ClientDetail() {
                 name="machineNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Inventory / Serial Number</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Inventory Number
+                      <span className="text-xs font-normal text-muted-foreground">— auto-generated, you can edit</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g. VEND-1234" />
+                      <Input {...field} placeholder="VM-008" className="font-mono" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -294,7 +355,7 @@ export default function ClientDetail() {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={assignMutation.isPending}>
-                  Assign Machine
+                  {assignMutation.isPending ? "Assigning…" : "Assign Machine"}
                 </Button>
               </DialogFooter>
             </form>
@@ -302,6 +363,7 @@ export default function ClientDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* Remove Confirmation Dialog */}
       <Dialog open={!!removeId} onOpenChange={(open) => { if (!open) setRemoveId(null); }}>
         <DialogContent>
           <DialogHeader>

@@ -12,7 +12,6 @@ import {
   AssignMachineToClientBody,
   RemoveClientMachineParams,
 } from "@workspace/api-zod";
-import QRCode from "qrcode";
 
 const router: IRouter = Router();
 
@@ -36,6 +35,18 @@ router.post("/clients", async (req, res): Promise<void> => {
     await db.insert(changeLogsTable).values({ operatorId: opId, action: "create", entity: "client", entityId: client.id, details: `Created client: ${client.name}` });
   }
   res.status(201).json({ ...client, createdAt: client.createdAt.toISOString() });
+});
+
+router.get("/clients/machines/next-number", async (_req, res): Promise<void> => {
+  const rows = await db.select({ machineNumber: clientMachinesTable.machineNumber }).from(clientMachinesTable);
+  const nums = rows
+    .map(r => r.machineNumber)
+    .filter(n => /^VM-\d+$/i.test(n))
+    .map(n => parseInt(n.replace(/^VM-/i, ""), 10))
+    .filter(n => !isNaN(n));
+  const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
+  const nextNum = maxNum + 1;
+  res.json({ nextNumber: `VM-${String(nextNum).padStart(3, "0")}` });
 });
 
 router.get("/clients/:id", async (req, res): Promise<void> => {
@@ -129,8 +140,7 @@ router.post("/clients/:id/machines", async (req, res): Promise<void> => {
 
   const appUrl = process.env.APP_URL ?? `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}`;
   const qrUrl = `${appUrl}/?clientId=${params.data.id}&machineId=${cm.id}`;
-  const qrCode = await QRCode.toDataURL(qrUrl);
-  const [updated] = await db.update(clientMachinesTable).set({ qrCode }).where(eq(clientMachinesTable.id, cm.id)).returning();
+  const [updated] = await db.update(clientMachinesTable).set({ qrCode: qrUrl }).where(eq(clientMachinesTable.id, cm.id)).returning();
 
   res.status(201).json({
     id: updated.id,

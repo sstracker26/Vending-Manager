@@ -30,9 +30,7 @@ export default function OperatorHome() {
   const [scannedBadge, setScannedBadge] = useState<string | null>(null);
 
   const { data: clients } = useListClients();
-  const { data: machines } = useListClientMachines(clientId || 0, {
-    query: { enabled: !!clientId }
-  });
+  const { data: machines } = useListClientMachines(clientId || 0);
   const { data: allProducts } = useListProducts();
   const { data: operators } = useListOperators();
 
