@@ -381,6 +381,7 @@ export interface MachineLoad {
   operatorId?: number | null;
   /** @nullable */
   operatorName?: string | null;
+  isInitial: boolean;
   items: MachineLoadItem[];
   totalRevenue: number;
   totalCost: number;
@@ -397,6 +398,8 @@ export interface MachineLoadInput {
   clientMachineId: number;
   /** @nullable */
   operatorId?: number | null;
+  /** @nullable */
+  isInitial?: boolean | null;
   items: MachineLoadItemInput[];
 }
 

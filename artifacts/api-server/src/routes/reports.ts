@@ -20,7 +20,7 @@ router.get("/reports/sales", async (req, res): Promise<void> => {
     }
   }
 
-  const loadConditions = [];
+  const loadConditions = [eq(machineLoadsTable.isInitial, false)];
   if (clientMachineId != null) loadConditions.push(eq(machineLoadsTable.clientMachineId, clientMachineId));
   else if (cmIds) loadConditions.push(inArray(machineLoadsTable.clientMachineId, cmIds));
   if (dateFrom) loadConditions.push(gte(machineLoadsTable.createdAt, new Date(dateFrom)));

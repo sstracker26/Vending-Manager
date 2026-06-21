@@ -46,6 +46,7 @@ async function buildLoadResponse(load: typeof machineLoadsTable.$inferSelect) {
     machineName: cm?.m.name ?? "",
     operatorId: load.operatorId ?? null,
     operatorName: op?.name ?? null,
+    isInitial: load.isInitial,
     items: loadItems,
     totalRevenue,
     totalCost,
@@ -100,6 +101,7 @@ router.post("/machine-loads", async (req, res): Promise<void> => {
   const [load] = await db.insert(machineLoadsTable).values({
     clientMachineId: parsed.data.clientMachineId,
     operatorId: parsed.data.operatorId ?? null,
+    isInitial: parsed.data.isInitial ?? false,
   }).returning();
 
   const itemRows = parsed.data.items.map(item => {

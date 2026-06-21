@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, MapPin, Coffee, Users, Package, QrCode, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, MapPin, Coffee, Users, Package, QrCode, CheckCircle2, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QrScannerDialog } from "@/components/QrScannerDialog";
 
@@ -26,6 +26,7 @@ export default function OperatorHome() {
   const [machineId, setMachineId] = useState<number | null>(null);
   const [operatorId, setOperatorId] = useState<number | null>(null);
   const [items, setItems] = useState<LoadItem[]>([]);
+  const [isInitial, setIsInitial] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedBadge, setScannedBadge] = useState<string | null>(null);
 
@@ -33,6 +34,9 @@ export default function OperatorHome() {
   const { data: machines } = useListClientMachines(clientId || 0);
   const { data: allProducts } = useListProducts();
   const { data: operators } = useListOperators();
+
+  const selectedOperator = operators?.find(o => o.id === operatorId);
+  const isAdminOperator = selectedOperator?.type === "admin";
 
   const selectedMachine = machines?.find(m => m.id === machineId);
   const products = selectedMachine
@@ -42,7 +46,6 @@ export default function OperatorHome() {
   const createLoad = useCreateMachineLoad();
   const { toast } = useToast();
 
-  // Handle QR code URL params on page load (when opened via QR code link directly)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const qrClientId = parseInt(params.get("clientId") ?? "");
@@ -50,12 +53,10 @@ export default function OperatorHome() {
     if (!isNaN(qrClientId) && !isNaN(qrMachineId)) {
       setClientId(qrClientId);
       setMachineId(qrMachineId);
-      // Clean the URL without reload
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
-  // Set badge label when client+machine are filled (from scan or URL)
   useEffect(() => {
     if (clientId && machines && machineId) {
       const cm = machines.find(m => m.id === machineId);
@@ -73,6 +74,11 @@ export default function OperatorHome() {
     setMachineId(null);
     setItems([]);
     setScannedBadge(null);
+  };
+
+  const handleOperatorChange = (val: string) => {
+    setOperatorId(parseInt(val));
+    setIsInitial(false);
   };
 
   const handleQrScan = (scannedClientId: number, scannedMachineId: number) => {
@@ -101,8 +107,8 @@ export default function OperatorHome() {
   const handleSubmit = () => {
     if (!machineId || !operatorId || items.length === 0 || items.some(i => !i.productId || i.quantity <= 0)) {
       toast({ 
-        title: "Validation Error", 
-        description: "Please fill all required fields and ensure quantities are valid.",
+        title: "Грешка при валидация", 
+        description: "Попълнете всички задължителни полета и проверете количествата.",
         variant: "destructive"
       });
       return;
@@ -112,14 +118,20 @@ export default function OperatorHome() {
       data: {
         clientMachineId: machineId,
         operatorId,
+        isInitial: isInitial || false,
         items
       }
     }, {
       onSuccess: () => {
-        toast({ title: "Load Recorded Successfully!" });
+        toast({ 
+          title: isInitial ? "Начално зареждане записано!" : "Зареждането е записано успешно!",
+          description: isInitial ? "Продуктите са извадени от склада. Записът не влияе на продажбите." : undefined,
+        });
         setClientId(null);
         setMachineId(null);
+        setOperatorId(null);
         setItems([]);
+        setIsInitial(false);
         setScannedBadge(null);
       }
     });
@@ -131,13 +143,13 @@ export default function OperatorHome() {
         <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
           <Coffee className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Record Machine Load</h1>
-        <p className="text-muted-foreground">Register restocked items for a client machine</p>
+        <h1 className="text-3xl font-bold tracking-tight">Зареждане на машина</h1>
+        <p className="text-muted-foreground">Регистриране на заредени продукти за машина на клиент</p>
       </div>
 
       <Card className="border-primary/20 shadow-md">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Location & Staff</CardTitle>
+          <CardTitle>Локация и персонал</CardTitle>
           <Button
             variant="outline"
             size="sm"
@@ -145,7 +157,7 @@ export default function OperatorHome() {
             onClick={() => setScannerOpen(true)}
           >
             <QrCode className="w-4 h-4" />
-            Scan QR
+            Сканирай QR
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -153,17 +165,17 @@ export default function OperatorHome() {
             <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
               <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
               <span className="text-sm font-medium text-primary">{scannedBadge}</span>
-              <Badge variant="secondary" className="ml-auto text-xs">QR Scanned</Badge>
+              <Badge variant="secondary" className="ml-auto text-xs">QR сканиран</Badge>
             </div>
           )}
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground" /> Client Location
+              <MapPin className="w-4 h-4 text-muted-foreground" /> Клиент
             </Label>
             <Select onValueChange={handleClientChange} value={clientId?.toString() || ""}>
               <SelectTrigger>
-                <SelectValue placeholder="Select client" />
+                <SelectValue placeholder="Изберете клиент" />
               </SelectTrigger>
               <SelectContent>
                 {clients?.filter(c => c.hasContract).map((c) => (
@@ -175,7 +187,7 @@ export default function OperatorHome() {
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Coffee className="w-4 h-4 text-muted-foreground" /> Machine
+              <Coffee className="w-4 h-4 text-muted-foreground" /> Машина
             </Label>
             <Select 
               disabled={!clientId} 
@@ -183,7 +195,7 @@ export default function OperatorHome() {
               value={machineId?.toString() || ""}
             >
               <SelectTrigger>
-                <SelectValue placeholder={!clientId ? "Select a client first" : "Select machine"} />
+                <SelectValue placeholder={!clientId ? "Първо изберете клиент" : "Изберете машина"} />
               </SelectTrigger>
               <SelectContent>
                 {machines?.filter(m => m.isActive).map((m) => (
@@ -197,11 +209,11 @@ export default function OperatorHome() {
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-muted-foreground" /> Operator
+              <Users className="w-4 h-4 text-muted-foreground" /> Оператор
             </Label>
-            <Select onValueChange={(v) => setOperatorId(parseInt(v))} value={operatorId?.toString() || ""}>
+            <Select onValueChange={handleOperatorChange} value={operatorId?.toString() || ""}>
               <SelectTrigger>
-                <SelectValue placeholder="Select your name" />
+                <SelectValue placeholder="Изберете вашето име" />
               </SelectTrigger>
               <SelectContent>
                 {operators?.filter(o => o.isActive).map((o) => (
@@ -213,26 +225,65 @@ export default function OperatorHome() {
         </CardContent>
       </Card>
 
-      <Card className="border-primary/20 shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className={`shadow-md transition-colors ${isInitial ? "border-amber-400" : "border-primary/20"}`}>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
           <CardTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" /> Loaded Items
+            <Package className="w-5 h-5" /> Заредени продукти
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={addItem}>
-            <Plus className="w-4 h-4 mr-2" /> Add Item
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {isAdminOperator && (
+              <div className="flex rounded-md border overflow-hidden text-sm">
+                <button
+                  type="button"
+                  onClick={() => setIsInitial(false)}
+                  className={`px-3 py-1.5 font-medium transition-colors ${
+                    !isInitial
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  Редовно
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsInitial(true)}
+                  className={`px-3 py-1.5 font-medium transition-colors flex items-center gap-1.5 ${
+                    isInitial
+                      ? "bg-amber-500 text-white"
+                      : "bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  Начално
+                </button>
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={addItem}>
+              <Plus className="w-4 h-4 mr-2" /> Добави
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        {isInitial && (
+          <div className="mx-6 mb-0 -mt-2 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+            <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+            <span>
+              <strong>Начално зареждане</strong> — продуктите ще бъдат извадени от склада, но <strong>няма да се отразят в отчетите за продажби и приходи</strong>.
+            </span>
+          </div>
+        )}
+
+        <CardContent className={`space-y-4 ${isInitial ? "mt-4" : ""}`}>
           {items.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-md">
-              No items added yet. Click "Add Item" to start.
+              Няма добавени продукти. Натиснете „Добави" за начало.
             </div>
           ) : (
             <div className="space-y-3">
               {items.map((item, index) => (
                 <div key={index} className="flex items-end gap-3 p-3 bg-muted/30 rounded-md border">
                   <div className="flex-1 space-y-2">
-                    <Label>Product</Label>
+                    <Label>Продукт</Label>
                     <Select 
                       onValueChange={(v) => {
                         const prod = products?.find(p => p.id === parseInt(v));
@@ -243,7 +294,7 @@ export default function OperatorHome() {
                       value={item.productId ? item.productId.toString() : ""}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select product" />
+                        <SelectValue placeholder="Изберете продукт" />
                       </SelectTrigger>
                       <SelectContent>
                         {products?.map(p => (
@@ -258,7 +309,7 @@ export default function OperatorHome() {
                     return (
                       <div className="w-28 space-y-2">
                         <Label className="flex items-center gap-1">
-                          Qty
+                          Кол.
                           {prod && <span className="text-xs text-muted-foreground font-normal">({prod.unit})</span>}
                         </Label>
                         <Input
@@ -289,11 +340,15 @@ export default function OperatorHome() {
         </CardContent>
         <CardFooter>
           <Button 
-            className="w-full h-12 text-lg" 
+            className={`w-full h-12 text-lg ${isInitial ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
             onClick={handleSubmit}
             disabled={createLoad.isPending || !machineId || !operatorId || items.length === 0}
           >
-            {createLoad.isPending ? "Submitting..." : "Submit Load Record"}
+            {createLoad.isPending
+              ? "Изпращане..."
+              : isInitial
+              ? "Запиши начално зареждане"
+              : "Запиши зареждането"}
           </Button>
         </CardFooter>
       </Card>

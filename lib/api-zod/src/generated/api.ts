@@ -484,6 +484,7 @@ export const ListMachineLoadsResponseItem = zod.object({
   "machineName": zod.string(),
   "operatorId": zod.number().nullish(),
   "operatorName": zod.string().nullish(),
+  "isInitial": zod.boolean(),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -505,6 +506,7 @@ export const ListMachineLoadsResponse = zod.array(ListMachineLoadsResponseItem)
 export const CreateMachineLoadBody = zod.object({
   "clientMachineId": zod.number(),
   "operatorId": zod.number().nullish(),
+  "isInitial": zod.boolean().nullish(),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "quantity": zod.number()
