@@ -15,6 +15,7 @@ import { Plus, Search, Edit2, Trash2, ChevronRight, FileDown, FileUp } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth";
+import { exportCsv, parseCsv, triggerFileInput } from "@/lib/csv";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -114,8 +115,59 @@ export default function Clients() {
     }
   };
 
-  const handleImportExport = (action: string) => {
-    toast({ title: `${action} complete`, description: `The ${action.toLowerCase()} operation has been processed.` });
+  const handleExport = () => {
+    if (!clients || clients.length === 0) {
+      toast({ title: "Nothing to export", description: "No clients to export." });
+      return;
+    }
+    exportCsv(
+      "clients.csv",
+      ["name", "address", "phone", "hasContract", "contractStartDate", "notes"],
+      clients.map((c) => [
+        c.name,
+        c.address ?? "",
+        c.phone ?? "",
+        c.hasContract ? "true" : "false",
+        c.contractStartDate ? c.contractStartDate.split("T")[0] : "",
+        c.notes ?? "",
+      ])
+    );
+    toast({ title: "Export complete", description: `${clients.length} clients exported to clients.csv` });
+  };
+
+  const handleImport = () => {
+    triggerFileInput(".csv", (text, filename) => {
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        toast({ title: "Import failed", description: "CSV file is empty or has no valid rows.", variant: "destructive" });
+        return;
+      }
+      let created = 0;
+      let failed = 0;
+      const createNext = (index: number) => {
+        if (index >= rows.length) {
+          queryClient.invalidateQueries({ queryKey: getListClientsQueryKey() });
+          toast({ title: "Import complete", description: `${created} created, ${failed} failed from ${filename}` });
+          return;
+        }
+        const row = rows[index];
+        if (!row.name) { failed++; createNext(index + 1); return; }
+        createMutation.mutate({
+          data: {
+            name: row.name,
+            address: row.address || null,
+            phone: row.phone || null,
+            hasContract: row.hasContract?.toLowerCase() === "true",
+            contractStartDate: row.contractStartDate || null,
+            notes: row.notes || null,
+          }
+        }, {
+          onSuccess: () => { created++; createNext(index + 1); },
+          onError: () => { failed++; createNext(index + 1); },
+        });
+      };
+      createNext(0);
+    });
   };
 
   const filteredClients = clients?.filter(c => 
@@ -134,13 +186,13 @@ export default function Clients() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {canEdit && (
             <>
-              <Button variant="outline" size="sm" onClick={() => handleImportExport('Import')}>
+              <Button variant="outline" size="sm" onClick={handleImport}>
                 <FileDown className="w-4 h-4 mr-2" />
-                Import
+                Import CSV
               </Button>
-              <Button variant="outline" size="sm" onClick={() => handleImportExport('Export')}>
+              <Button variant="outline" size="sm" onClick={handleExport}>
                 <FileUp className="w-4 h-4 mr-2" />
-                Export
+                Export CSV
               </Button>
               <Button onClick={handleOpenCreate}>
                 <Plus className="w-4 h-4 mr-2" />

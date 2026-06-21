@@ -14,6 +14,7 @@ import * as z from "zod";
 import { Plus, Search, Edit2, Trash2, Container, Coffee, FileDown, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { exportCsv, parseCsv, triggerFileInput } from "@/lib/csv";
 
 const machineSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -131,6 +132,66 @@ export default function Machines() {
     }
   };
 
+  const handleExport = () => {
+    if (!machines || machines.length === 0) {
+      toast({ title: "Nothing to export", description: "No machines to export." });
+      return;
+    }
+    exportCsv(
+      "machines.csv",
+      ["name", "type", "brand", "model", "containerCount", "rowCount", "chuteCount", "notes"],
+      machines.map((m) => [
+        m.name,
+        m.type,
+        m.brand ?? "",
+        m.model ?? "",
+        m.containerCount ?? "",
+        m.rowCount ?? "",
+        m.chuteCount ?? "",
+        m.notes ?? "",
+      ])
+    );
+    toast({ title: "Export complete", description: `${machines.length} machines exported to machines.csv` });
+  };
+
+  const handleImport = () => {
+    triggerFileInput(".csv", (text, filename) => {
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        toast({ title: "Import failed", description: "CSV file is empty or has no valid rows.", variant: "destructive" });
+        return;
+      }
+      let created = 0;
+      let failed = 0;
+      const createNext = (index: number) => {
+        if (index >= rows.length) {
+          queryClient.invalidateQueries({ queryKey: getListMachinesQueryKey() });
+          toast({ title: "Import complete", description: `${created} created, ${failed} failed from ${filename}` });
+          return;
+        }
+        const row = rows[index];
+        if (!row.name) { failed++; createNext(index + 1); return; }
+        const type = row.type === "coffee" ? "coffee" : "vending";
+        createMutation.mutate({
+          data: {
+            name: row.name,
+            type,
+            brand: row.brand || null,
+            model: row.model || null,
+            containerCount: row.containerCount ? parseInt(row.containerCount) : null,
+            rowCount: row.rowCount ? parseInt(row.rowCount) : null,
+            chuteCount: row.chuteCount ? parseInt(row.chuteCount) : null,
+            notes: row.notes || null,
+          }
+        }, {
+          onSuccess: () => { created++; createNext(index + 1); },
+          onError: () => { failed++; createNext(index + 1); },
+        });
+      };
+      createNext(0);
+    });
+  };
+
   const filteredMachines = machines?.filter(m => 
     m.name.toLowerCase().includes(search.toLowerCase()) || 
     m.brand?.toLowerCase().includes(search.toLowerCase()) ||
@@ -147,9 +208,13 @@ export default function Machines() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {canEdit && (
             <>
-              <Button variant="outline" size="sm" onClick={() => toast({ title: 'Export complete' })}>
+              <Button variant="outline" size="sm" onClick={handleImport}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
                 <FileUp className="w-4 h-4 mr-2" />
-                Export
+                Export CSV
               </Button>
               <Button onClick={handleOpenCreate}>
                 <Plus className="w-4 h-4 mr-2" />

@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Search, Edit2, Trash2, Package, AlertTriangle } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, FileDown, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { exportCsv, parseCsv, triggerFileInput } from "@/lib/csv";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -117,6 +118,64 @@ export default function Products() {
     }
   };
 
+  const handleExport = () => {
+    if (!products || products.length === 0) {
+      toast({ title: "Nothing to export", description: "No products to export." });
+      return;
+    }
+    exportCsv(
+      "products.csv",
+      ["name", "type", "purchasePrice", "salePrice", "unit", "minStockQuantity", "notes"],
+      products.map((p) => [
+        p.name,
+        p.type,
+        p.purchasePrice,
+        p.salePrice,
+        p.unit,
+        p.minStockQuantity,
+        p.notes ?? "",
+      ])
+    );
+    toast({ title: "Export complete", description: `${products.length} products exported to products.csv` });
+  };
+
+  const handleImport = () => {
+    triggerFileInput(".csv", (text, filename) => {
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        toast({ title: "Import failed", description: "CSV file is empty or has no valid rows.", variant: "destructive" });
+        return;
+      }
+      let created = 0;
+      let failed = 0;
+      const createNext = (index: number) => {
+        if (index >= rows.length) {
+          queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
+          toast({ title: "Import complete", description: `${created} created, ${failed} failed from ${filename}` });
+          return;
+        }
+        const row = rows[index];
+        if (!row.name) { failed++; createNext(index + 1); return; }
+        const type = row.type === "coffee" ? "coffee" : "vending";
+        createMutation.mutate({
+          data: {
+            name: row.name,
+            type,
+            purchasePrice: parseFloat(row.purchasePrice) || 0,
+            salePrice: parseFloat(row.salePrice) || 0,
+            unit: row.unit || "бр",
+            minStockQuantity: parseInt(row.minStockQuantity) || 0,
+            notes: row.notes || null,
+          }
+        }, {
+          onSuccess: () => { created++; createNext(index + 1); },
+          onError: () => { failed++; createNext(index + 1); },
+        });
+      };
+      createNext(0);
+    });
+  };
+
   const formatEUR = (value: number) => {
     return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value);
   };
@@ -134,10 +193,20 @@ export default function Products() {
         </div>
         <div className="flex items-center gap-2">
           {canEdit && (
-            <Button onClick={handleOpenCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={handleImport}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <FileUp className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button onClick={handleOpenCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </Button>
+            </>
           )}
         </div>
       </div>
