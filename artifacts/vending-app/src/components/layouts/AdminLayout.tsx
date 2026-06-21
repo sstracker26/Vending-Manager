@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { Coffee, LogOut, LayoutDashboard, Users, Container, Package, ArrowRightLeft, UserCircle, CalendarDays, Receipt, FileText, ActivitySquare } from "lucide-react";
+import { Coffee, LogOut, LayoutDashboard, Users, Container, Package, ArrowRightLeft, UserCircle, CalendarDays, Receipt, FileText, ActivitySquare, History } from "lucide-react";
 import { useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: "/admin/machines", label: "Machines", icon: Container },
     { href: "/admin/products", label: "Products", icon: Package },
     { href: "/admin/stock", label: "Stock", icon: ArrowRightLeft },
+    { href: "/admin/machine-loads", label: "Machine Loads", icon: History },
     { href: "/admin/operators", label: "Operators", icon: UserCircle },
     { href: "/admin/schedules", label: "Schedules", icon: CalendarDays },
     { href: "/admin/expenses", label: "Expenses", icon: Receipt },

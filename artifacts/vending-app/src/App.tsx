@@ -20,6 +20,7 @@ import AdminSchedules from "@/pages/admin/Schedules";
 import AdminExpenses from "@/pages/admin/Expenses";
 import AdminReports from "@/pages/admin/Reports";
 import AdminLogs from "@/pages/admin/Logs";
+import AdminMachineLoads from "@/pages/admin/MachineLoads";
 
 import OperatorHome from "@/pages/operator/Home";
 import OperatorSchedule from "@/pages/operator/Schedule";
@@ -91,6 +92,9 @@ function Router() {
       </Route>
       <Route path="/admin/reports">
         <ProtectedAdminRoute component={AdminReports} path="/admin/reports" />
+      </Route>
+      <Route path="/admin/machine-loads">
+        <ProtectedAdminRoute component={AdminMachineLoads} path="/admin/machine-loads" />
       </Route>
       <Route path="/admin/logs">
         <ProtectedAdminRoute component={AdminLogs} path="/admin/logs" />
