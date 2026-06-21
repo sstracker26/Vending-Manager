@@ -9,6 +9,7 @@ export const machineLoadsTable = pgTable("machine_loads", {
   id: serial("id").primaryKey(),
   clientMachineId: integer("client_machine_id").notNull().references(() => clientMachinesTable.id),
   operatorId: integer("operator_id").references(() => operatorsTable.id),
+  isInitial: boolean("is_initial").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
