@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, machineLoadsTable, machineLoadItemsTable, clientMachinesTable, clientsTable, machinesTable, productsTable, operatorsTable, stockMovementsTable } from "@workspace/db";
+import { db, machineLoadsTable, machineLoadItemsTable, clientMachinesTable, clientsTable, machinesTable, productsTable, operatorsTable, stockMovementsTable, changeLogsTable } from "@workspace/db";
 import { eq, and, gte, lte, inArray, sql } from "drizzle-orm";
 import {
   CreateMachineLoadBody,
@@ -125,6 +125,21 @@ router.post("/machine-loads", async (req, res): Promise<void> => {
       clientMachineId: parsed.data.clientMachineId,
       notes: `Machine load #${load.id}`,
       operatorId: parsed.data.operatorId ?? null,
+    });
+  }
+
+  const opId = parsed.data.operatorId ?? req.session?.operatorId ?? null;
+  if (opId) {
+    const itemsSummary = parsed.data.items.map(i => {
+      const p = productMap.get(i.productId);
+      return `${i.quantity}x ${p?.name ?? i.productId}`;
+    }).join(", ");
+    await db.insert(changeLogsTable).values({
+      operatorId: opId,
+      action: "machine_load",
+      entity: "stock",
+      entityId: load.id,
+      details: `Machine load #${load.id} — machine ${cm.cm.machineNumber}: ${itemsSummary}`,
     });
   }
 

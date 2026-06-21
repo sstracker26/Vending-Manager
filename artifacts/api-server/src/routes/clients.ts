@@ -142,6 +142,11 @@ router.post("/clients/:id/machines", async (req, res): Promise<void> => {
   const qrUrl = `${appUrl}/?clientId=${params.data.id}&machineId=${cm.id}`;
   const [updated] = await db.update(clientMachinesTable).set({ qrCode: qrUrl }).where(eq(clientMachinesTable.id, cm.id)).returning();
 
+  const opId2 = req.session?.operatorId;
+  if (opId2) {
+    await db.insert(changeLogsTable).values({ operatorId: opId2, action: "assign", entity: "machine", entityId: parsed.data.machineId, details: `Assigned machine ${machine.name} (${parsed.data.machineNumber}) to client: ${client.name}` });
+  }
+
   res.status(201).json({
     id: updated.id,
     clientId: updated.clientId,
@@ -163,6 +168,10 @@ router.delete("/clients/:clientId/machines/:machineId", async (req, res): Promis
     .where(and(eq(clientMachinesTable.clientId, params.data.clientId), eq(clientMachinesTable.id, params.data.machineId)))
     .returning();
   if (!cm) { res.status(404).json({ error: "Client machine not found" }); return; }
+  const opId3 = req.session?.operatorId;
+  if (opId3) {
+    await db.insert(changeLogsTable).values({ operatorId: opId3, action: "unassign", entity: "machine", entityId: cm.machineId, details: `Removed machine ${cm.machineNumber} from client #${params.data.clientId}` });
+  }
   res.sendStatus(204);
 });
 

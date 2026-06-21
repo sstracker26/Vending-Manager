@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, productsTable, stockMovementsTable, clientMachinesTable, operatorsTable, machinesTable, clientsTable } from "@workspace/db";
+import { db, productsTable, stockMovementsTable, clientMachinesTable, operatorsTable, machinesTable, clientsTable, changeLogsTable } from "@workspace/db";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import {
   CreateStockMovementBody,
@@ -104,6 +104,18 @@ router.post("/stock/movements", async (req, res): Promise<void> => {
     notes: parsed.data.notes ?? null,
     operatorId: parsed.data.operatorId ?? req.session?.operatorId ?? null,
   }).returning();
+
+  const opId = sm.operatorId ?? req.session?.operatorId ?? null;
+  if (opId) {
+    const direction = sm.type === "in" ? "IN" : "OUT";
+    await db.insert(changeLogsTable).values({
+      operatorId: opId,
+      action: sm.type === "in" ? "stock_in" : "stock_out",
+      entity: "stock",
+      entityId: sm.productId,
+      details: `${direction} ${parseFloat(sm.quantity)} ${product.unit} — ${product.name} (reason: ${sm.reason})${sm.notes ? ` | ${sm.notes}` : ""}`,
+    });
+  }
 
   res.status(201).json({
     id: sm.id,

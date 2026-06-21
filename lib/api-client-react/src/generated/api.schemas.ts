@@ -658,6 +658,18 @@ dateFrom?: string | null;
  * @nullable
  */
 dateTo?: string | null;
+/**
+ * @nullable
+ */
+action?: string | null;
+/**
+ * @nullable
+ */
+entity?: string | null;
+/**
+ * @nullable
+ */
+operatorId?: number | null;
 };
 
 export type GetDashboardStatsParams = {

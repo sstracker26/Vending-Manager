@@ -663,7 +663,10 @@ export const GetSalesReportResponse = zod.object({
  */
 export const ListLogsQueryParams = zod.object({
   "dateFrom": zod.coerce.string().nullish(),
-  "dateTo": zod.coerce.string().nullish()
+  "dateTo": zod.coerce.string().nullish(),
+  "action": zod.coerce.string().nullish(),
+  "entity": zod.coerce.string().nullish(),
+  "operatorId": zod.coerce.number().nullish(),
 })
 
 export const ListLogsResponseItem = zod.object({
