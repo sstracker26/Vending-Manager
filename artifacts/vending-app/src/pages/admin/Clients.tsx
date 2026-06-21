@@ -15,7 +15,7 @@ import { Plus, Search, Edit2, Trash2, ChevronRight, FileDown, FileUp } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth";
-import { exportCsv, parseCsv, triggerFileInput } from "@/lib/csv";
+import { exportExcel, triggerFileInput } from "@/lib/csv";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -120,8 +120,8 @@ export default function Clients() {
       toast({ title: "Nothing to export", description: "No clients to export." });
       return;
     }
-    exportCsv(
-      "clients.csv",
+    exportExcel(
+      "clients.xlsx",
       ["name", "address", "phone", "hasContract", "contractStartDate", "notes"],
       clients.map((c) => [
         c.name,
@@ -132,14 +132,13 @@ export default function Clients() {
         c.notes ?? "",
       ])
     );
-    toast({ title: "Export complete", description: `${clients.length} clients exported to clients.csv` });
+    toast({ title: "Export complete", description: `${clients.length} clients exported to clients.xlsx` });
   };
 
   const handleImport = () => {
-    triggerFileInput(".csv", (text, filename) => {
-      const rows = parseCsv(text);
+    triggerFileInput(".xlsx,.xls", (rows, filename) => {
       if (rows.length === 0) {
-        toast({ title: "Import failed", description: "CSV file is empty or has no valid rows.", variant: "destructive" });
+        toast({ title: "Import failed", description: "File is empty or has no valid rows.", variant: "destructive" });
         return;
       }
       let created = 0;
@@ -188,11 +187,11 @@ export default function Clients() {
             <>
               <Button variant="outline" size="sm" onClick={handleImport}>
                 <FileDown className="w-4 h-4 mr-2" />
-                Import CSV
+                Import Excel
               </Button>
               <Button variant="outline" size="sm" onClick={handleExport}>
                 <FileUp className="w-4 h-4 mr-2" />
-                Export CSV
+                Export Excel
               </Button>
               <Button onClick={handleOpenCreate}>
                 <Plus className="w-4 h-4 mr-2" />
