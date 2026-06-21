@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Redirect } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -28,8 +28,7 @@ export default function Login() {
   });
 
   if (!isLoading && session) {
-    setLocation("/admin/dashboard");
-    return null;
+    return <Redirect to="/admin/dashboard" />;
   }
 
   function onSubmit(values: z.infer<typeof loginSchema>) {
