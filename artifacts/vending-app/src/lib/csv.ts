@@ -1,16 +1,18 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
-export function exportExcel(
+export async function exportExcel(
   filename: string,
   headers: string[],
   rows: (string | number | boolean | null | undefined)[][]
-): void {
-  const data = [headers, ...rows.map((r) => r.map((v) => (v == null ? "" : v)))];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Data");
-  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-  const blob = new Blob([buf], {
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Data");
+  worksheet.addRow(headers);
+  for (const row of rows) {
+    worksheet.addRow(row.map((v) => (v == null ? "" : v)));
+  }
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);
@@ -32,19 +34,31 @@ export function triggerFileInput(
     const file = input.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target?.result as ArrayBuffer);
-      const wb = XLSX.read(data, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, {
-        defval: "",
+    reader.onload = async (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+      const worksheet = workbook.getWorksheet(1);
+      if (!worksheet) {
+        onFile([], file.name);
+        return;
+      }
+      const headerRow = worksheet.getRow(1);
+      const headers: string[] = [];
+      headerRow.eachCell((cell) => {
+        headers.push(String(cell.value ?? "").trim());
       });
-      const rows = raw.map((r) => {
-        const out: Record<string, string> = {};
-        for (const k of Object.keys(r)) {
-          out[k.trim()] = String(r[k] ?? "").trim();
-        }
-        return out;
+      const rows: Record<string, string>[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const record: Record<string, string> = {};
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const header = headers[colNumber - 1];
+          if (header !== undefined) {
+            record[header] = String(cell.value ?? "").trim();
+          }
+        });
+        rows.push(record);
       });
       onFile(rows, file.name);
     };

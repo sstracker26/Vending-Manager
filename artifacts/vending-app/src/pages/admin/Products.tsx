@@ -118,12 +118,12 @@ export default function Products() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!products || products.length === 0) {
       toast({ title: "Nothing to export", description: "No products to export." });
       return;
     }
-    exportExcel(
+    await exportExcel(
       "products.xlsx",
       ["name", "type", "purchasePrice", "salePrice", "unit", "minStockQuantity", "notes"],
       products.map((p) => [

@@ -115,12 +115,12 @@ export default function Clients() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!clients || clients.length === 0) {
       toast({ title: "Nothing to export", description: "No clients to export." });
       return;
     }
-    exportExcel(
+    await exportExcel(
       "clients.xlsx",
       ["name", "address", "phone", "hasContract", "contractStartDate", "notes"],
       clients.map((c) => [

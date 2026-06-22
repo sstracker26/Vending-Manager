@@ -132,12 +132,12 @@ export default function Machines() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!machines || machines.length === 0) {
       toast({ title: "Nothing to export", description: "No machines to export." });
       return;
     }
-    exportExcel(
+    await exportExcel(
       "machines.xlsx",
       ["name", "type", "brand", "model", "containerCount", "rowCount", "chuteCount", "notes"],
       machines.map((m) => [
