@@ -102,7 +102,7 @@ router.post("/stock/movements", async (req, res): Promise<void> => {
     quantity: String(parsed.data.quantity),
     clientMachineId: parsed.data.clientMachineId ?? null,
     notes: parsed.data.notes ?? null,
-    operatorId: parsed.data.operatorId ?? req.session?.operatorId ?? null,
+    operatorId: req.session?.operatorId ?? null, // ONLY from session
   }).returning();
 
   const opId = sm.operatorId ?? req.session?.operatorId ?? null;
