@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/auth";
 import healthRouter from "./health";
 import authRouter from "./auth";
 import clientsRouter from "./clients";
@@ -17,16 +18,16 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
-router.use(clientsRouter);
-router.use(machinesRouter);
-router.use(productsRouter);
-router.use(operatorsRouter);
-router.use(stockRouter);
-router.use(machineLoadsRouter);
-router.use(schedulesRouter);
-router.use(expensesRouter);
-router.use(reportsRouter);
-router.use(logsRouter);
-router.use(dashboardRouter);
+router.use(requireAuth, clientsRouter);
+router.use(requireAuth, machinesRouter);
+router.use(requireAuth, productsRouter);
+router.use(requireAuth, operatorsRouter);
+router.use(requireAuth, stockRouter);
+router.use(requireAuth, machineLoadsRouter);
+router.use(requireAuth, schedulesRouter);
+router.use(requireAuth, expensesRouter);
+router.use(requireAuth, reportsRouter);
+router.use(requireAuth, logsRouter);
+router.use(requireAuth, dashboardRouter);
 
 export default router;
