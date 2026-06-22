@@ -13,10 +13,16 @@ declare module "express-session" {
 
 const router: IRouter = Router();
 
-const MASTER_PASSWORD = process.env.MASTER_PASSWORD ?? "MASTER_SECRET_2024";
-const MODERATOR_PASSWORD_KEY = "moderator_password";
+if (!process.env.MASTER_PASSWORD) {
+  throw new Error("MASTER_PASSWORD environment variable is required");
+}
+if (!process.env.MODERATOR_PASSWORD) {
+  throw new Error("MODERATOR_PASSWORD environment variable is required");
+}
 
-let moderatorPassword = process.env.MODERATOR_PASSWORD ?? "mod2024";
+const MASTER_PASSWORD = process.env.MASTER_PASSWORD;
+const MODERATOR_PASSWORD_KEY = "moderator_password";
+let moderatorPassword = process.env.MODERATOR_PASSWORD;
 
 router.post("/auth/login", async (req, res): Promise<void> => {
   const { password } = req.body as { password?: string };
